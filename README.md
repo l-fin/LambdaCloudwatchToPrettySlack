@@ -26,25 +26,76 @@ aws Cloudwatch에서 경보가 발생할 때 Slack에 알리는 람다 함수입
     
 5. 경보 이름 설정 후 `경보 생성` 클릭
 
-> ### lambda 함수 적용
+> ### zip 파일 얻기
 
-1. CloudwatchToPrettySlack zip 다운로드
 
-    ![download_zip](src/download_zip.png)
+1. Python virtualenv 설치
 
-2. aws 홈페이지 > Lambda > 함수 > `함수 생성` 클릭
+```
+# terminal
 
-3. 런타임 : Python 3.7 설정
+pip3 install virtualenv
+```
 
-4. 생성했던 SNS 경보를 트리거 목록에 추가
+2. 해당 레포지토리 clone
 
-5. 함수 코드 설정 > `.zip파일 업로드` 선택 후 zip파일 업로드
+3. clone한 디렉토리 안으로 이동하여 venv 설정
+
+```
+# cloned_directory
+
+virtualenv venv
+```
+
+4. venv 활성화
+
+```
+# cloned_directory
+
+source venv/bin/activate
+```
+
+5. venv 안에 함수 실행을 위한 모듈들 설치
+
+```
+# (venv) cloned_directory
+
+pip3 install slack slackclient datetime python-dateutil
+```
+
+6. venv 비활성화
+```
+# (venv) cloned_directory
+
+deactivate
+```
+
+7. 다음 명령어를 실행하여 디렉토리에 zip 파일 생성
+
+```
+# cloned_directory
+
+cd venv/lib/python3.7/site-packages/
+zip -r ../../../../cloudWatchToPrettySlack.zip ./*
+cd ../../../../
+zip -ur cloudWatchToPrettySlack.zip lambda_function.py
+```
+    
+> Lambda 함수 생성
+
+1. aws 홈페이지 > Lambda > 함수 > `함수 생성` 클릭
+
+2. 런타임 : Python 3.7 설정
+
+3. 생성했던 SNS 경보를 트리거 목록에 추가
+
+4. 함수 코드 설정 > `.zip파일 업로드` 선택 후 zip파일 업로드
 
     * 핸들러 : `lambda_function.lambda_handler` 입력
 
     > ![set_lambda](src/set_lambda.png)
     
-6. 환경 변수 설정
+5. 환경 변수 설정
 
     - **token**
 
