@@ -58,7 +58,7 @@ def lambda_handler(event, context):
     else:
         data_point = ((message['NewStateReason'].split('['))[1].split())[0]
         if old_state == 'INSUFFICIENT_DATA':
-            reason = 'now can find ' + trigger + ' data (value: ' + str(round(float(data_point), 1)) + ')'
+            reason = 'now can find ' + trigger + ' data'
         else:
             reason = trigger + '(' + str(round(float(data_point), 1)) + ')'\
                      + (' was ' if new_state == 'ALARM' else ' was not ')\
