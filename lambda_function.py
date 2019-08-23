@@ -2,8 +2,7 @@ import os
 import json
 import logging
 
-from botocore.vendored import requests
-from slacker import Slacker
+import slack
 from dateutil.parser import parse
 from datetime import timedelta
 
@@ -22,7 +21,7 @@ logger.setLevel(logging.INFO)
 
 
 # SNS에서 받은 ComparisonOperator 정보로부터 문장 생성
-def check_comparance(oper):
+def check_comparison(oper):
     if oper == 'GreaterThanThreshold':
         return 'greater than the threshold'
     elif oper == 'GreaterThanOrEqualToThreshold':
@@ -49,24 +48,32 @@ def lambda_handler(event, context):
     parsed_time = (parse(alarm_time) + timedelta(hours=int(TIME_DIFFERENCE))).strftime("%Y/%m/%d %H:%M:%S")
 
     # 메시지로부터 현재 데이터 값만 파싱해 저장
-    datapoint = ((message['NewStateReason'].split('['))[1].split())[0]
-    comparance = check_comparance(message['Trigger']['ComparisonOperator'])
+    comparison = check_comparison(message['Trigger']['ComparisonOperator'])
 
     # 최종 메시지 생성
-    reason = trigger + '(' + datapoint + ')' + (
-        ' was ' if new_state == 'ALARM' else ' was not ') + comparance + '(' + str(threshold) + ')'
-    slack = Slacker(TOKEN)
+    reason = None
+    if new_state == 'INSUFFICIENT_DATA':
+        reason = 'cannot find ' + trigger + ' data'
+    else:
+        data_point = ((message['NewStateReason'].split('['))[1].split())[0]
+        reason = trigger + '(' + data_point + ')'\
+                 + (' was ' if new_state == 'ALARM' else ' was not ')\
+                 + comparison + '(' + str(threshold) + ')'
+    client = slack.WebClient(TOKEN)
 
     # 메시지 디자인
-    attachments_dict = dict()
-    attachments_dict['color'] = 'good' if new_state == 'OK' else 'danger'
-    attachments_dict['pretext'] = '*```%s```*' % alarm_name
-    attachments_dict['text'] = '*State:* %s %s\n*Time:* %s\n\n*Threshold(Reason)* \n%s' % (
-        ':white_check_mark:' if new_state == 'OK' else ':question:', new_state, parsed_time, reason)
-    attachments_dict['mrkdwn_in'] = ["text", "pretext"]
-    attachments_dict['field'] = dict()
-    attachments_dict['field']['text'] = 'hello'
-    attachments = [attachments_dict]
+    attachments = [
+        {
+            'color': 'good' if new_state == 'OK' else 'warning' if new_state == 'INSUFFICIENT_DATA' else 'danger',
+            'pretext': '*```%s```*' % alarm_name,
+            'text': '*State:* %s %s\n*Time:* %s\n\n*Reason* \n%s'
+                    % (':white_check_mark:' if new_state == 'OK' else ':question:', new_state, parsed_time, reason),
+            'mrkdwn_in': ['text', 'pretext']
+        }
+    ]
 
     # 봇 이름, 아이콘 등을 설정하여 슬랙 채널에 메시지 전송
-    slack.chat.post_message(CHANNEL, username='AWS Monitoring Bot', icon_emoji=':robot_face:', attachments=attachments)
+    client.chat_postMessage(channel=CHANNEL,
+                            username='AWS Monitoring Bot',
+                            icon_emoji=':robot_face:',
+                            attachments=attachments)
