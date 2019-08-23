@@ -67,7 +67,9 @@ def lambda_handler(event, context):
             'color': 'good' if new_state == 'OK' else 'warning' if new_state == 'INSUFFICIENT_DATA' else 'danger',
             'pretext': '*```%s```*' % alarm_name,
             'text': '*State:* %s %s\n*Time:* %s\n\n*Reason* \n%s'
-                    % (':white_check_mark:' if new_state == 'OK' else ':question:', new_state, parsed_time, reason),
+                    % (':white_check_mark:' if new_state == 'OK'
+                       else ':warning' if new_state == 'INSUFFICIENT_DATA'
+                       else ':question:', new_state, parsed_time, reason),
             'mrkdwn_in': ['text', 'pretext']
         }
     ]
