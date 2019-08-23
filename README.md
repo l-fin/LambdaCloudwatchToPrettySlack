@@ -73,7 +73,7 @@ deactivate
 7. 다음 명령어를 실행하여 디렉토리에 zip 파일 생성
 
 ```
-# cloned_directory/
+# cloned_directory
 
 cd venv/lib/python3.7/site-packages/
 zip -r ../../../../cloudWatchToPrettySlack.zip ./*

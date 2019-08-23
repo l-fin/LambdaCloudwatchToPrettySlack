@@ -41,6 +41,7 @@ def lambda_handler(event, context):
     alarm_name = message['AlarmName']
     alarm_time = message['StateChangeTime']
     new_state = message['NewStateValue']
+    old_state = message['OldStateValue']
     trigger = message['Trigger']['MetricName']
     threshold = message['Trigger']['Threshold']
 
@@ -56,9 +57,12 @@ def lambda_handler(event, context):
         reason = 'cannot find ' + trigger + ' data'
     else:
         data_point = ((message['NewStateReason'].split('['))[1].split())[0]
-        reason = trigger + '(' + data_point + ')'\
-                 + (' was ' if new_state == 'ALARM' else ' was not ')\
-                 + comparison + '(' + str(threshold) + ')'
+        if old_state == 'INSUFFICIENT_DATA':
+            reason = 'now can find ' + trigger + ' data (value: ' + str(round(float(data_point), 1)) + ')'
+        else:
+            reason = trigger + '(' + str(round(float(data_point), 1)) + ')'\
+                     + (' was ' if new_state == 'ALARM' else ' was not ')\
+                     + comparison + '(' + str(threshold) + ')'
     client = slack.WebClient(TOKEN)
 
     # 메시지 디자인
